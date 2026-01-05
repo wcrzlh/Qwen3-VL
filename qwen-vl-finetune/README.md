@@ -316,3 +316,106 @@ The script accepts arguments in three categories:
    - `"_attn_implementation": "flash_attention_2",` could be add in the config.json of the model to use flash attention.
    - The Qwen3VL MoE model does not support DeepSpeed with ZeRO-3. Additionally, Hugging Face’s official implementation does not include support for load balancing loss currently.
 
+# Qwen3-VL SFT
+
+We use `Qwen/Qwen3-VL-30B-A3B-Instruct` as the model to accomplish SFT task.
+
+`accelerate config` is needed to be set.
+The demo config yaml is as follows:
+```
+compute_environment: LOCAL_MACHINE
+debug: false
+distributed_type: FSDP
+downcast_bf16: 'no'
+enable_cpu_affinity: false
+fsdp_config:
+  fsdp_activation_checkpointing: true
+  fsdp_auto_wrap_policy: TRANSFORMER_BASED_WRAP
+  fsdp_backward_prefetch: BACKWARD_PRE
+  fsdp_cpu_ram_efficient_loading: true
+  fsdp_forward_prefetch: true
+  fsdp_offload_params: false
+  fsdp_sharding_strategy: FULL_SHARD
+  fsdp_state_dict_type: SHARDED_STATE_DICT
+  fsdp_sync_module_states: true
+  fsdp_use_orig_params: true
+machine_rank: 0
+main_training_function: main
+mixed_precision: bf16
+num_machines: 1
+num_processes: 8
+rdzv_backend: static
+same_network: true
+tpu_env: []
+tpu_use_cluster: false
+tpu_use_sudo: false
+use_cpu: false
+```
+
+Then refer to `sft_30a3b.sh` and launch SFT task.
+
+```bash
+#!/bin/bash
+
+# Distributed training configuration
+MASTER_ADDR="127.0.0.1"                     # [Required] Master node IP for multi-GPU training
+MASTER_PORT=$(shuf -i 20000-29999 -n 1)     # Random port to avoid conflicts
+NPROC_PER_NODE=$(nvidia-smi --list-gpus | wc -l)  # Automatically detects available GPUs
+
+## DeepSpeed configuration
+## MoE model only supports zero2
+## this script could run on 32 80G GPU
+#deepspeed=./scripts/zero2.json
+
+# Model configuration
+llm=Qwen/Qwen3-VL-30B-A3B-Instruct  # Using HuggingFace model ID
+
+# Training hyperparameters
+lr=1e-5
+batch_size=1
+grad_accum_steps=4
+
+# Training entry point
+entry_file=qwenvl/train/train_qwen.py
+
+# Dataset configuration (replace with public dataset names)
+datasets="fundataset%100"
+
+# Output configuration
+run_name="qwen3vl-moe"
+output_dir=./output
+
+# Training arguments
+args="
+    --model_name_or_path "${llm}" \
+    --dataset_use ${datasets} \
+    --data_flatten False \
+    --tune_mm_vision True \
+    --tune_mm_mlp False \
+    --tune_mm_llm False \
+    --bf16 \
+    --output_dir ${output_dir} \
+    --num_train_epochs 10 \
+    --per_device_train_batch_size ${batch_size} \
+    --per_device_eval_batch_size $((batch_size*2)) \
+    --gradient_accumulation_steps ${grad_accum_steps} \
+    --max_pixels 50176 \
+    --min_pixels 784 \
+    --eval_strategy "no" \
+    --save_strategy "steps" \
+    --save_steps 1000 \
+    --save_total_limit 1 \
+    --learning_rate ${lr} \
+    --weight_decay 0 \
+    --warmup_ratio 0.03 \
+    --max_grad_norm 1 \
+    --lr_scheduler_type "cosine" \
+    --logging_steps 1 \
+    --model_max_length 8192 \
+    --dataloader_num_workers 4 \
+    --run_name ${run_name} \
+    --report_to wandb"
+
+# Launch training
+accelerate launch ${entry_file} ${args}
+```

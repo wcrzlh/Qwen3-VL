@@ -1,7 +1,6 @@
 from typing import Dict, List, Optional, Sequence, Tuple, Callable
 
 import torch
-from flash_attn.flash_attn_interface import flash_attn_varlen_func
 from transformers.modeling_flash_attention_utils import FlashAttentionKwargs
 from transformers import Trainer
 from transformers.cache_utils import Cache
@@ -244,12 +243,12 @@ def replace_qwen2_vl_attention_class():
         return_mask
     )
     ## qwen3vl moe
-    transformers.models.qwen3_vl_moe.modeling_qwen3_vl_moe.Qwen3VLMoeTextAttention.forward = (
-        qwen3vl_forward
-    )
-    transformers.models.qwen3_vl_moe.modeling_qwen3_vl_moe.create_causal_mask = (
-        return_mask
-    )
+    # transformers.models.qwen3_vl_moe.modeling_qwen3_vl_moe.Qwen3VLMoeTextAttention.forward = (
+    #     qwen3vl_forward
+    # )
+    # transformers.models.qwen3_vl_moe.modeling_qwen3_vl_moe.create_causal_mask = (
+    #     return_mask
+    # )
 
 
 def print_trainable_parameters_visual(self) -> None:
