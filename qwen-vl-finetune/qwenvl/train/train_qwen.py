@@ -40,6 +40,7 @@ from qwenvl.train.argument import (
     TrainingArguments,
 )
 from transformers import AutoProcessor, Trainer
+from hyper_parallel import hsdp
 
 local_rank = None
 
@@ -132,6 +133,10 @@ def train(attn_implementation="eager"):
             dtype=(torch.bfloat16 if training_args.bf16 else None),
         )
         data_args.model_type = "qwen2vl"
+
+    # enbale hsdp
+    if training_args.hsdp_enable:
+        model = hsdp(model, shard_size=4, optimizer_level="level3")
 
     print(f'the initlized model is {model_args.model_name_or_path} the class is {model.__class__.__name__}')
     processor = AutoProcessor.from_pretrained(
