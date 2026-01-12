@@ -56,8 +56,7 @@ args="
     --logging_steps 1 \
     --model_max_length 8192 \
     --dataloader_num_workers 4 \
-    --run_name ${run_name} \
-    --hsdp_enable True"
+    --run_name ${run_name}"
 
 # Launch training
 torchrun --nproc_per_node=${NPROC_PER_NODE} \

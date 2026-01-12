@@ -43,6 +43,3 @@ class TrainingArguments(transformers.TrainingArguments):
     lora_r: int = field(default=64)
     lora_alpha: int = field(default=128)
     lora_dropout: float = field(default=0.0)
-
-    ## hsdp enable
-    hsdp_enbale: bool = field(default=False)
