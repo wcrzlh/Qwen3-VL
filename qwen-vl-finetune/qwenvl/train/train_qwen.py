@@ -190,7 +190,8 @@ def train(attn_implementation="eager"):
 
     if list(pathlib.Path(training_args.output_dir).glob("checkpoint-*")):
         logging.info("checkpoint found, resume training")
-        trainer.train(resume_from_checkpoint=True)
+        # resume_from_checkpoint True --> False
+        trainer.train(resume_from_checkpoint=False)
     else:
         trainer.train()
     trainer.save_state()

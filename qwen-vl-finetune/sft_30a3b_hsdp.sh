@@ -16,7 +16,7 @@ llm=Qwen/Qwen3-VL-30B-A3B-Instruct  # Using HuggingFace model ID
 # Training hyperparameters
 lr=1e-5
 batch_size=1
-grad_accum_steps=4
+grad_accum_steps=1
 
 # Training entry point
 entry_file=qwenvl/train/train_qwen.py
@@ -38,7 +38,7 @@ args="
     --tune_mm_llm False \
     --bf16 \
     --output_dir ${output_dir} \
-    --num_train_epochs 10 \
+    --num_train_epochs 3 \
     --per_device_train_batch_size ${batch_size} \
     --per_device_eval_batch_size $((batch_size*2)) \
     --gradient_accumulation_steps ${grad_accum_steps} \
